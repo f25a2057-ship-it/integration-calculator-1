@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Integration Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
+        input { padding: 8px; width: 200px; }
+        canvas { max-width: 800px; max-height: 400px; }
+    </style>
+</head>
+<body>
+
+    <h2>Simple Integration Calculator</h2>
+    <div class="controls">
+        <input type="text" id="funcInput" placeholder="f(x) e.g. x^2" value="x^2">
+        <input type="number" id="lowerBound" value="0" placeholder="From">
+        <input type="number" id="upperBound" value="2" placeholder="To">
+        <button onclick="calculate()">Calculate</button>
+    </div>
+
+    <div id="result">Result: --</div>
+    <canvas id="myChart"></canvas>
+
+    <script>
+        let myChart;
+
+        function calculate() {
+            const expr = document.getElementById('funcInput').value;
+            const a = parseFloat(document.getElementById('lowerBound').value);
+            const b = parseFloat(document.getElementById('upperBound').value);
+
+            try {
+                // Symbolic Integration
+                const node = math.parse(expr);
+                const integral = math.integral(node, 'x');
+                
+                // Calculate definite integral
+                const scopeA = { x: a };
+                const scopeB = { x: b };
+                const val = integral.evaluate(scopeB) - integral.evaluate(scopeA);
+                
+                document.getElementById('result').innerText = `Result: ${val.toFixed(4)}`;
+                
+                updateChart(expr, a, b);
+            } catch (e) {
+                alert("Error in expression: " + e.message);
+            }
+        }
+
+        function updateChart(expr, a, b) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const dataPoints = [];
+            const labels = [];
+            
+            for(let i = a - 2; i <= b + 2; i += 0.1) {
+                labels.push(i.toFixed(1));
+                dataPoints.push(math.evaluate(expr, {x: i}));
+            }
+
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'f(x)',
+                        data: dataPoints,
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+    </script>
+</body>
+</html>
